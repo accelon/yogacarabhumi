@@ -14,6 +14,12 @@
 
 ## 二、硬邊界（違反即錯）
 
+> **2026-11-15 權責變更（使用者定案）**：耀悟法師是 **ybh 的 maintainer**——ybh.adb 改什麼、
+> 不改什麼**以法師為準**；需要 accelon26 配合的事回報使用者；**法師（含他的 agent）不得發布官網**。
+> 完整規則與現況速覽見 `link-audit/docs/MAINTAINER-HANDOVER.md`（法師或其 agent 的起點檔）。
+> 本檔§二的第 2、3 條是給**本區 agent**的約束，不因上述變更而放寬。
+## 二、硬邊界（違反即錯）
+
 1. **不改 accelon26／母區任何檔**（讀檔允許，寫檔需先問使用者）。
 2. 不跑 `release.ts`／`deploy.ts --site`（＝發佈，寫 `versions.json`＋www＋傳兩站），除非使用者明說「發佈」。純本地重壓（`build-desktop.ts`＋`go build`）也不由我方做。
 3. commit／push 只推自己產出的檔；別人改的／未追蹤的一律不夾帶。未獲使用者指示不 commit。
