@@ -189,6 +189,7 @@ def cmd_reply(mod, argv):
     p.add_argument("uid")
     p.add_argument("--body-file", required=True)
     p.add_argument("--subject", default="")
+    p.add_argument("--attach", default="", help="附檔路徑，多個用分號分隔（例：截圖＋位置清單）")
     p.add_argument("--dry-run", action="store_true")
     a = p.parse_args(argv)
     addr, src = resolve_target(mod, a.uid)
@@ -207,11 +208,79 @@ def cmd_reply(mod, argv):
                 imap.logout()
             except Exception:
                 pass
+    atts = [x.strip() for x in (a.attach or "").split(";") if x.strip()]
+    if atts:
+        # 有附件就走本包装自己的寄信路（fuyan 的 cmd_send 不支援附件）
+        with io.open(a.body_file, encoding="utf-8") as f:
+            body_text = f.read().replace("\r\n", "\n")
+        send_with_attach(mod, addr, a.subject, body_text, atts, a.dry_run)
+        return
     sa = [sys.argv[0], "send", "--subject", a.subject, "--body-file", a.body_file, "--to", addr]
+    if a.attach:
+        # 附檔只准交非 gitignored 之外的明確檔案，且逐一檢查不含客戶聯絡資料／留言原件——
+        # 免得順手把 out/mail-dump-*（含 IP、UA、來信全文）當附件寄出去。
+        for p in [x for x in a.attach.split(";") if x]:
+            base = os.path.basename(p).lower()
+            if "mail-dump" in base or "mail-draft" in base or "contacts" in base or "state" in base:
+                sys.stderr.write("拒絕附件：" + os.path.basename(p) + " 含客戶資料或屬於執行期狀態，不得外寄。\n")
+                sys.exit(9)
+            if not os.path.exists(p):
+                sys.stderr.write("附件不存在：" + p + "\n"); sys.exit(9)
+        sa += ["--attach", a.attach]
     if a.dry_run:
         sa.append("--dry-run")
     sys.argv = sa
     mod.main()
+
+
+def send_with_attach(mod, addr, subject, body_text, attachments, dry_run):
+    """寄信帶附件：沿用 fuyan 模組的 `connect()`（憑證仍只從母區 .local/smtp.json 讀，
+    不讀不印密碼），但**不用他們的 cmd_send**——那個構信時不支援附件（本區踩過：
+    `--attach` 會被它的 argparse 擋掉）。標頭格式與既有往來一致，免得名稱跳來跳去。
+    附件逐一過閘：檔名含 mail-dump／mail-draft／contacts／state 一律拒附（那些是客戶
+    來信原文、草稿與執行期狀態，含 IP 與聯絡資料，不該出现在公开往来里）。"""
+    import email.utils as eut
+    from email.message import EmailMessage
+    from email.utils import formataddr
+    import smtplib
+    import mimetypes
+
+    for p in attachments:
+        base = os.path.basename(p).lower()
+        if any(k in base for k in ("mail-dump", "mail-draft", "contacts", "state", "ybh-mail")):
+            sys.stderr.write("拒絕附件：" + os.path.basename(p) + "（客戶資料或執行期狀態）\n"); sys.exit(9)
+        if not os.path.exists(p):
+            sys.stderr.write("附件不存在：" + p + "\n"); sys.exit(9)
+
+    imap, user, password = mod.connect()
+    try:
+        imap.logout()
+    except Exception:
+        pass
+
+    msg = EmailMessage()
+    msg["From"] = formataddr(("Yap 的AI助手 小騰", user))
+    msg["To"] = addr
+    msg["Subject"] = subject
+    msg["Date"] = eut.formatdate(localtime=True)
+    msg["Message-ID"] = eut.make_msgid(domain="qq.com")
+    msg.set_content(body_text, charset="utf-8")
+    for p in attachments:
+        ctype, _ = mimetypes.guess_type(p)
+        maintype, subtype = (ctype or "application/octet-stream").split("/", 1)
+        with io.open(p, "rb") as f:
+            msg.add_attachment(f.read(), maintype=maintype, subtype=subtype, filename=os.path.basename(p))
+
+    print(json.dumps({"to": addr[:1] + "***@" + addr.split("@")[-1], "subject": subject,
+                      "附件": [os.path.basename(p) for p in attachments],
+                      "字數": len(body_text), "dry_run": bool(dry_run)}, ensure_ascii=False))
+    if dry_run:
+        print("（--dry-run：未寄出）")
+        return
+    with smtplib.SMTP_SSL(mod.SMTP_HOST, 465, timeout=90) as s:
+        s.login(user, password)
+        refused = s.send_message(msg, from_addr=user, to_addrs=[addr])
+    print("已寄出" + ("" if not refused else "，但遭拒收：" + str(refused)))
 
 
 def main():
