@@ -13,3 +13,5 @@ link-audit/out/mail-dump-*
 link-audit/out/mail-draft-*
 # 客戶聯絡地址（qq_mail_ybh.py 執行時需要，但地址不該寫進公開倉）
 link-audit/data/mail-contacts.json
+# 對話貼圖等工具暫存輸入（非專案資料）
+.qoder-input-images/
