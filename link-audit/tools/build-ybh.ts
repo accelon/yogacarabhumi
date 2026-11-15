@@ -15,6 +15,7 @@ import { encodeXmlAttr, encodeXmlText } from 'D:/2026/adb-converter/ts/src/xml-e
 import { AdbReader, SyncIO } from 'D:/2026/adb-converter/ts/src/accelon26/adb.ts';
 import { VaPaMapper } from 'D:/2026/adb-converter/ts/src/accelon26/vapa.ts';
 import { nodeAnchorInfo, anchorVa } from 'D:/2026/adb-converter/ts/src/accelon26/page-text.ts';
+import { parseTableBlock } from 'D:/2026/adb-converter/ts/src/accelon26/table-block.ts';
 
 const ROOT = 'D:/2026/yogacarabhumi-dila';
 const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
@@ -299,10 +300,56 @@ let kemonCnt = 0;
 const KEMON_RE = /^([甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥])([一二三四五六七八九十]{1,3})、(.*)$/;
 let renameCnt = 0;
 let delRefCnt = 0, selfMergeCnt = 0;
+let tableWrapCnt = 0, tableSkipCnt = 0;   // v27：<表> 包裹計數（過閘／被產品解析器拒絕）
+
+/**
+ * v27：管線表包 `<表>`（耀悟法師 2026-11-15 08:58 UID 229「md表格未能显示」）。
+ * 母區 `docs/adb/table.md` §1 定案「邊界由 `<表>` 決定，內容才由規則解析」——渲染器
+ * 只在 `<表>` 區塊內才跑管線表解析（`render_accelon3.ts:1266 BLOCK_TAG_RE → blockRegionAt`），
+ * 而我方 raw 從不發 `<表>`，全倉 2,487 行表格一律照普通文字渲染＝法師看到的「沒有表格」。
+ * 閘門＝**產品自己的解析器** `table-block.ts parseTableBlock`：過得了才包，過不了維持現樣
+ * （母區規則「欄數不一致就整張拒絕」，寧可不出表也不要錯位）。此處只加兩行邊界標籤，
+ * 不動任何一格文字——被科判標題切碎的續行（缺表頭／欄數不齊）如實留原樣，不硬湊表頭。
+ */
+function wrapPipeTables(out: string[]): void {
+  const isRow = (s: string) => s.trimStart().startsWith('|');
+  const res: string[] = [];
+  for (let i = 0; i < out.length; i++) {
+    if (!isRow(out[i]!)) { res.push(out[i]!); continue; }
+    let j = i;
+    while (j + 1 < out.length && isRow(out[j + 1]!)) j++;
+    const seg = out.slice(i, j + 1);
+    if (parseTableBlock(seg)) { res.push('<表>', ...seg, '</表>'); tableWrapCnt++; }
+    else { res.push(...seg); tableSkipCnt++; }
+    i = j;
+  }
+  out.length = 0;
+  out.push(...res);
+}
 
 // v10：剝哨兵（未入庫系列引用），連外圍《》一併吞
 function postInline(s: string): string {
   return s.replace(/《\u0001》/g, '').replace(/\u0001/g, '');
+}
+
+/**
+ * 剝 markdown 的行內標記（粗體／斜體／行內碼），只動標記不動文字。
+ * v27 修「斜體那把尺會吃掉跳脫星號」：語料寫 `\*` 表示**字面星號**（大正附表符號，
+ * 例如 T1579-11「遍行作意·第二」整列 7 個 `*`＝第二分攝、下方圖例「\* = 第二分攝」），
+ * 而原本的 `(?<!\*)\*…\*` 只擋「前面是星號」、沒擋「前面是反斜線」，於是相鄰兩個 `\*`
+ * 被当成斜體配對、**連符號帶中間文字一起消失**（v26 實測：7 個 `*` 剩 1 個、6 格變成 `\`）。
+ * 只加回看斷言救不了：藏掉第一個星號後第二個仍會跟第三個配對。正解＝先把 `\*` 藏成哨兵、
+ * 跑完三條 replace 再原樣還原；哨兵 `\u0002` 全倉 0 命中（measure-emphasis-damage.ts 實測），
+ * 且無 `\*` 的行結果與修前逐字相同（不被動到）。
+ * 保留 `\*` 的反斜線不剝＝不在此處做「跳脫字元要不要顯示」的正文取捨（那屬作者裁，另記 backlog）。
+ */
+const MD_ESC_STAR = '\u0002';
+function stripInlineMd(s: string): string {
+  return s.replace(/\\\*/g, MD_ESC_STAR)
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .split(MD_ESC_STAR).join('\\*');
 }
 function bodyLines(text: string, fam: string, childChain: string, base: string, mirror?: number[], outlineMain?: string[]): string[] {
   let mi = 0;
@@ -466,7 +513,7 @@ function bodyLines(text: string, fam: string, childChain: string, base: string, 
       continue;
     }
     // 去掉 markdown 粗體/斜體/行內碼標記（保留文字）
-    ln = ln.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '$1').replace(/`([^`]+)`/g, '$1');
+    ln = stripInlineMd(ln);
     const t = postInline(inline(ln)).replace(/[ \t]+$/, '');
     out.push(t.trim() ? kemonLink(t, rawLi) : t);
     // P2：注文段落 ref——獨立行（v15.2 教訓：不可併入正文行，會被上層抽取吞進文字）
@@ -489,6 +536,7 @@ function bodyLines(text: string, fam: string, childChain: string, base: string, 
     }
   }
   while (out.length && out[out.length - 1].trim() === '') out.pop();
+  wrapPipeTables(out);                                  // v27：<表> 邊界（閘門＝產品解析器）
   return out;
 }
 
@@ -562,6 +610,7 @@ const out = path.join(OUTDIR, 'ybh.adb');
 fs.writeFileSync(out, res.file);
 console.log(`built ${out}: ${(res.file.length / 1048576).toFixed(2)} MiB in ${Date.now() - t0} ms — ${res.lines} lines, ${res.tokens} tokens, tags: ${res.tagNames.join(' ')}`);
 console.log('cachedKeys:', res.cachedKeys.join(' '));
+console.log(`v27 表格：<表> 包裹 ${tableWrapCnt} 段（過產品 parseTableBlock），拒絕 ${tableSkipCnt} 段維持純文字（科判標題切碎的續行，缺表頭／欄數不齊）`);
 console.log(`互鏈：節聯 ${jieCnt}、CBETA 聯 ${taishoCnt}（科判行 ${taishoCnt - paraRefCnt}＝v19 新增他家族 ${kepanZhuCnt}＋注文段落 ref ${paraRefCnt}，另收攏同窗重複 ${paraDupCnt}）、CBETA 行內嵌 ${embedJCnt}、**P4 <融> ${fusionCnt} 枚（大綱樹另 ${outlineFusionCnt} 枚）**、自指鏈行併除 ${selfMergeCnt}、梵漢剝除 ${delRefCnt}、文字 ${textCnt}、<錨> ${anchorCnt}、干支改名 ${renameCnt}`);
 
 // ---- 產後驗收（驗收腳本本身也要被驗）：錨點逐條解析＋節點行核對＋已知負控 ----

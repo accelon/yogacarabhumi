@@ -1,0 +1,20 @@
+/** 單一探針：法師那張表的表頭第一格 `&lt;br&gt;` 經產品渲染後變成什麼（要不要另開單）。 */
+const el = () => ({ style: {}, dataset: {}, hidden: false, textContent: '', innerHTML: '', classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } }, setAttribute() {}, removeAttribute() {}, append() {}, appendChild() {}, remove() {}, addEventListener() {}, removeEventListener() {}, querySelector() { return null; }, querySelectorAll() { return []; }, after() {}, insertBefore() {} });
+const g = globalThis as any;
+g.window = { addEventListener() {}, setTimeout: () => 0, location: { href: '' } };
+g.document = { getElementById: () => el(), querySelector: () => el(), querySelectorAll: () => [], addEventListener() {}, createElement: () => el(), body: el() };
+g.navigator = { userAgent: 'test' }; g.localStorage = { getItem: () => null, setItem() {}, removeItem() {} }; g.CSS = { highlights: new Map() };
+const { AdbReader, SyncIO } = await import('D:/2026/adb-converter/ts/src/accelon26/adb.ts');
+const { VaPaMapper } = await import('D:/2026/adb-converter/ts/src/accelon26/vapa.ts');
+const { renderPageBlocks } = await import('D:/2026/adb-converter/ts/src/accelon26/render_accelon3.ts');
+const rd = await AdbReader.open(new SyncIO(process.argv[2] ?? 'D:/2026/_scratch-ybh/ybh/ybh.adb'));
+const mp = new VaPaMapper(rd); await mp.init();
+const seg: string[] = [];
+for (let k = 16707; k <= 16754; k++) seg.push(await mp.lineText(k));
+const blocks = renderPageBlocks(seg, seg.map((_, k) => 16707 + k), { hardBreaks: true } as any, { depthOf: new Map(), levels: 0 } as any);
+console.log('區塊 kind：' + blocks.map((b) => b.kind + '(' + b.lines.length + ')').join(','));
+const tb = blocks.find((b) => b.kind === 'table')?.table;
+console.log(`cols=${tb?.cols} head=${tb?.head ? 'Y' : 'N'} rows=${tb?.rows.length}`);
+console.log('表頭各格的渲染結果（原始 HTML）：');
+(tb?.head?.cells ?? []).forEach((c, i) => console.log(`  [${i}] ${c}`));
+(tb?.head?.cells ?? []).forEach((c, i) => console.log(`  [${i}] ${c}`));
