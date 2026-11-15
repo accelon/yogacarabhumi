@@ -94,3 +94,45 @@ bun run link-audit/tools/verify-all.ts D:\accelon3\ybh.adb v<N>   # 六節全綠
   本區有一支排程每 30 分鐘巡查（QQ IMAP 連續登入會被鎖，30 分鐘是上限），
   ybh.adb 的 bug **直接修並發布到本機與兩站之外的正式上架仍由本區做**。
 - 給 agent 的建議起點：本檔 ＋ `link-audit/docs/SUMMARY.md` 的 §八「勘誤表」與最後兩節。
+
+
+## 七、本地打包：skill、環境覆寫與自主範圍（2026-11-15 更新）
+
+**已交給你一隻 skill**：`link-audit/skills/ybh-adb-package/SKILL.md`（另有可直接安裝的
+`ybh-adb-package.skill` 封裝檔）。內容只有「打包＋本地驗收＋本地部署」，含完成檢查清單。
+
+**先跑體檢，不要直接 build**：
+
+    bun run link-audit/tools/preflight.ts           # 人讀版
+    bun run link-audit/tools/preflight.ts --json    # 要貼回信裡回報環境的版本（不含憑證）
+
+路徑已改為**可用環境變數覆寫、不需改碼**（先前 124 支工具裡有 92 支把絕對路徑寫死，換機器就跑到一半才報 `Cannot find module`）：
+
+| 變數 | 意義 | 我們這臺的預設值 |
+|---|---|---|
+| `YBH_HOME` | 本倉根（含 `raw/`、`link-audit/`） | 由檔案位置自動推得 |
+| `YBH_SCRATCH` | 建置中繼與大輸出 | `D:/2026/_scratch-ybh` |
+| `ACCELON_SRC` | adb-converter 的 `ts/src` | `D:/2026/adb-converter/ts/src` |
+| `ACCELON_ADB` | 成品 adb 部署目錄 | `D:/accelon3` |
+| `TAISHO_ADB` | 大正藏底座 | `D:/accelon3/taisho.adb` |
+
+**必要前提（也是本次最大的依賴）**：打包器 `authorAdb`、reader 模組（`AdbReader`／`VaPaMapper`／
+`parseTableBlock`）與 ④⑥ 節的 `renderEmbed` 驗收，都 import 自 **adb-converter 的 TypeScript 原始碼**；
+③ 節需要 `taisho.adb`。所以本地打包在原理上需要那一份原始碼與大正底座 —— 這不是我們故意設限，
+是驗收標準與閱讀器共用同一支解析器所必需（否則「驗收過了但畫面不對」無從避免）。
+如果你那邊不方便放 adb-converter，請告知，我們另想辦法（例如把必要的幾個模組以固定版本 vendoring 進本倉，
+但那會產生與閱讀器版本漂移的風險，需要你同意才做）。
+
+**自主範圍（使用者 2026-11-15 定案）**：除以下兩類，你可以獨立作業、不必等使用者過目——
+1. **動到 accelon26**（`ts/src/`、`wails/`、`release.ts`、exe、`versions.json`、首頁文案與授權文字）：
+   寫成自包含缺陷單（帶檔名＋行號＋重現資料＋修復後可對的數字）交使用者轉母區。
+2. **把 ybh.adb 發布到官網**（`publish-adb.ts`、`deploy.ts`、`www/adb/*`、`deploy/adb-status.json`、
+   `adb-notes.json`）：仍由官網維護者執行。
+
+其餘（轉檔規則、發射標記、探針、清單、重建、本地部署、本倉 commit／push 到 upstream 與 fork）
+**以你的判斷為準**。ybh.adb 的內容取捨也屬你的許可權，我方不再代為決定，只把可查證的坐標與實測數字送到你手上。
+
+**兩條我方踩過、請你一併守住的紀律**：
+- 驗收的檔案必須等於交付的檔案（並行 rebuild 會把 PASS 記到舊位元組上）——交付前後都算 sha。
+- 部署目標可能是**硬鏈**（我們這臺的 `D:ccelon3\ybh.adb` 就是，另有兩個名字掛在母區測試目錄）；
+  就地截斷寫入會連帶改掉別人的檔。先 `fsutil hardlink list <路徑>` 查，多名字就先移走這個名字再放入新檔。

@@ -10,15 +10,18 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { authorAdb } from 'D:/2026/adb-converter/ts/src/adbauthor.ts';
-import { encodeXmlAttr, encodeXmlText } from 'D:/2026/adb-converter/ts/src/xml-entities.ts';
-import { AdbReader, SyncIO } from 'D:/2026/adb-converter/ts/src/accelon26/adb.ts';
-import { VaPaMapper } from 'D:/2026/adb-converter/ts/src/accelon26/vapa.ts';
-import { nodeAnchorInfo, anchorVa } from 'D:/2026/adb-converter/ts/src/accelon26/page-text.ts';
-import { parseTableBlock } from 'D:/2026/adb-converter/ts/src/accelon26/table-block.ts';
+// 母區相依改走 `paths.ts`（可用 ACCELON_SRC 覆寫）——讓 ybh maintainer 的 agent
+// 不必把 adb-converter 放在同一個磁碟位置也能打包。靜態 import 做不到這件事，故改成動態。
+import { P } from './paths.ts';
+const { authorAdb } = await import(P.modules().authorAdb);
+const { encodeXmlAttr, encodeXmlText } = await import(P.modules().xmlEntities);
+const { AdbReader, SyncIO } = await import(P.modules().adb);
+const { VaPaMapper } = await import(P.modules().vapa);
+const { nodeAnchorInfo, anchorVa } = await import(P.modules().pageText);
+const { parseTableBlock } = await import(P.modules().tableBlock);
 
-const ROOT = 'D:/2026/yogacarabhumi-dila';
-const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
+const ROOT = P.home;                       // 原料倉根（YBH_HOME 可覆寫）
+const RAW = P.raw();                       // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
 const OUTDIR = 'D:/2026/_scratch-ybh/ybh';
 fs.mkdirSync(OUTDIR, { recursive: true });
 

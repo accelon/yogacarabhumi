@@ -18,15 +18,16 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { P } from './paths.ts';            // 路徑单一来源，環境可用 YBH_HOME / YBH_SCRATCH / ACCELON_SRC / ACCELON_ADB / TAISHO_ADB 覆寫
 
-const YBH = process.argv.slice(2).find((x) => !x.startsWith('--')) ?? 'D:/accelon3/ybh.adb';
+const YBH = process.argv.slice(2).find((x) => !x.startsWith('--')) ?? `${P.accelonAdb}/ybh.adb`;
 const nowD = new Date();
 const pad = (x: number) => String(x).padStart(2, '0');
 const TAG = process.argv.slice(3).find((x) => !x.startsWith('--'))
   ?? `${nowD.getFullYear()}-${pad(nowD.getMonth() + 1)}-${pad(nowD.getDate())}_${pad(nowD.getHours())}${pad(nowD.getMinutes())}`;   // 用本地時間，UTC 會差 8 小時易誤判新舊
 const FAST = process.argv.includes('--fast');              // 快速自測：只跑 ①②③，不委派子腳本
-const SCR = 'D:/2026/_scratch-ybh';
-const OUT = `D:/2026/yogacarabhumi-dila/link-audit/data/verify-${TAG}.txt`;
+const SCR = P.scratch;                                     // YBH_SCRATCH 可覆寫（paths.ts）
+const OUT = `${P.data()}/verify-${TAG}.txt`;
 const log: string[] = [];
 let verdict = 0;                                        // 未綠項計數：任一節 FAIL 都不能報 PASS
 const say = (s: string) => { log.push(s); console.log(s); };
@@ -36,8 +37,8 @@ say(`# verify-all  ${new Date().toString()}`);
 say(`本體 ${YBH}`);
 say(`  ${(buf.length / 1048576).toFixed(2)} MiB  sha256 ${crypto.createHash('sha256').update(buf).digest('hex').slice(0, 16)}…`);
 
-const { AdbReader, SyncIO } = await import('D:/2026/adb-converter/ts/src/accelon26/adb.ts');
-const { nodeAnchorInfo, anchorVa } = await import('D:/2026/adb-converter/ts/src/accelon26/page-text.ts');
+const { AdbReader, SyncIO } = await import(P.modules().adb);
+const { nodeAnchorInfo, anchorVa } = await import(P.modules().pageText);
 const rd = await AdbReader.open(new SyncIO(YBH));
 say(`  源碼區塊 ${rd.containers.get('source')!.count}`);
 
@@ -70,7 +71,7 @@ const whole = parts.join('');
   const t0 = Date.now();
   const pages = new Set<string>();
   for (const m of whole.matchAll(/<聯 i="taisho\?([^"]+)"/g)) pages.add(m[1]!);
-  const trd = await AdbReader.open(new SyncIO('D:/accelon3/taisho.adb'));
+  const trd = await AdbReader.open(new SyncIO(P.taisho));
   let ok = 0; const bad: string[] = [];
   for (const p of pages) { if (await anchorVa(trd, p) != null) ok++; else if (bad.length < 5) bad.push(p); }
   say(`③ 跨庫 taisho：${pages.size} 種座標形式 → 解析 OK ${ok}、FAIL ${pages.size - ok}${bad.length ? '｜樣本 ' + bad.join(' ') : ''}｜(${((Date.now() - t0) / 1000).toFixed(0)}s)`);
