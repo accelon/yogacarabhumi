@@ -1,0 +1,7 @@
+{
+ "_comment": "把本檔複製成同目錄的 mail-contacts.json 並填入真實地址。真實地址不入版控（本倉是公開倉）。qq_mail_ybh.py 讀的是 mail-contacts.json，缺檔會明確報錯退出，不會靜默漏信或誤發。",
+ "ybh": {
+  "name": "<客戶稱呼>",
+  "email": "<本人信箱@example.com>"
+ }
+}

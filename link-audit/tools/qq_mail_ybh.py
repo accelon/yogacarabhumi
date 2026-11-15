@@ -4,12 +4,13 @@
 **寄件者不遮罩**、並把「回信收件人」改成**從內文取地址**。
 
 一、誰算本區來函（2026-11-15 兩次修正後的最終判準，两条都要認）
-  1. **首封**：耀悟法師（署名 `avatar q`、微信 avatarqz）走**官網 accelon26 留言表單**，
+  1. **首封**：耀悟法師（本區客戶，署名見 gitignored 聯絡檔）走**官網 accelon26 留言表單**，
      通知信的寄件者是機器人（就是本帳號自己）、主旨 `[accelon26] 留言 — avatar q`，
-     而他的地址只出現在**內文**那一行 `Email：avatarmail@qq.com`。
-  2. **之後**：直接mailbox-to-mailbox——他會從 `avatarmail@qq.com` 寄進來，
+     而他的地址只出現在**內文**那一行 `Email：<本人信箱>`。
+  2. **之後**：直接 mailbox 對 mailbox——他會從**自己的信箱**寄進來，
      這種信的**內文未必再寫自己的地址**。
-  ⇒ 判準＝`寄件者 == avatarmail@qq.com` **或** `內文含 avatarmail@qq.com`。
+  判準＝`寄件者 == 本人信箱` **或** `內文含本人信箱`（本人信箱讀自 gitignored 的 mail-contacts.json，
+     不寫進本檔——本倉是公開倉，地址不該進版控）。
      只按內文判會漏掉第 2 類（作者 2026-11-15 明示此點）；只按寄件者判會漏掉第 1 類。
   其餘寄件者（`gprajna@gmail.com`＝厚觀法師＝fuyan 線、`hunxian`、系統通知…）一律不屬本區：
   不處理、不標記、不回信。
@@ -42,6 +43,7 @@ QQ IMAP 連續登入過密會被鎖 `login frequency limited`，巡查間隔以 
 """
 import argparse
 import importlib.util
+import io
 import json
 import os
 import re
@@ -49,10 +51,35 @@ import sys
 
 FUYAN_MAIL = r"D:\2026\fuyan\src\qq_mail.py"
 MY_STATE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "ybh-mail-state.json")
-MY_MAILBOX = "avatarmail@qq.com"          # 耀悟法師
-# 回信只准寄這些地址；要新增必須由作者明示（避免內文偽造地址把我們變成寄信跳板）
-ALLOWED = {MY_MAILBOX}
+# 客戶地址**不寫進本檔**——本倉是公開倉（private=false），把地址寫死在追蹤的程式裡
+# 等於把聯絡資料Published 進版控與 GitHub Pages 同源的历史。改讀 gitignored 的
+# `link-audit/data/mail-contacts.json`（{"ybh": {"name":…, "email":…}}）。
+CONTACTS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "mail-contacts.json")
+
+
+def _load_contacts():
+    """回傳 (本人信箱, 白名單集合)。檔不在就明確失敗——宁可報錯，也不要默默用預設地址
+    去比對或發信（那會把「沒配置」當成「匹配不上」，表現成整批漏信）。"""
+    if not os.path.exists(CONTACTS):
+        sys.stderr.write("缺少客戶聯絡檔：" + CONTACTS + "（gitignored，需本機建立）\n")
+        sys.exit(8)
+    with io.open(CONTACTS, encoding="utf-8") as f:
+        c = json.load(f)
+    mail = (c.get("ybh") or {}).get("email", "").strip().lower()
+    if not mail:
+        sys.stderr.write("聯絡檔內沒有 ybh.email 欄位。\n"); sys.exit(8)
+    allowed = {v.get("email", "").strip().lower() for v in c.values() if isinstance(v, dict) and v.get("email")}
+    return mail, allowed
+
+
+MY_MAILBOX, ALLOWED = None, set()
 EMAIL_IN_BODY = re.compile(r"Email[：:]\s*([A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,})")
+
+
+def _init_recipients():
+    global MY_MAILBOX, ALLOWED
+    MY_MAILBOX, ALLOWED = _load_contacts()
+    return MY_MAILBOX
 
 
 def load_module():
@@ -84,7 +111,7 @@ def reply_target(mod, msg):
     """回信收件人：**先讀內文 `Email：` 行，其次才是寄件者**——兩者都要過白名單。
 
     順序不能反：首封走官網留言表單，From 是機器人／本帳號自己，照 From 回就會寄回自己（作者
-    2026-11-15 特別點出這個坑）；但之後他會直接從 avatarmail@qq.com 寄來，那種信**內文不再寫
+    2026-11-15 特別點出這個坑）；但之後他會直接從自己的信箱寄來，那種信**內文不再寫
     自己的地址**，此时能用的只有 From。兩個來源都必須命中 `ALLOWED`，否則不發——
     內文那行是任何人都能偽造的，不能讓一封來信把我們變成寄往任意地址的跳板。
     """
@@ -192,6 +219,7 @@ def main():
         sys.stderr.write(__doc__)
         sys.exit(1)
     verb, rest = sys.argv[1], sys.argv[2:]
+    _init_recipients()          # 沒有聯絡檔就在此明確失敗，不帶著空地址往下跑
     mod = load_module()
     if verb == "check":
         cmd_check(mod, rest)
