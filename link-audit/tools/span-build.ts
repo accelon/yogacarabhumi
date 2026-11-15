@@ -10,7 +10,8 @@ import { VaPaMapper } from 'D:/2026/adb-converter/ts/src/accelon26/vapa.ts';
 import { SearchSession } from 'D:/2026/adb-converter/ts/src/accelon26/search.ts';
 
 const ROOT = 'D:/2026/yogacarabhumi-dila';
-const files = fs.readdirSync(ROOT).filter((f) => /^T1579-\d+\.md$/.test(f)).sort((a, b) => +(/-(\d+)\.md/.exec(a)![1]!) - +(/-(\d+)\.md/.exec(b)![1]!));
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
+const files = fs.readdirSync(RAW).filter((f) => /^T1579-\d+\.md$/.test(f)).sort((a, b) => +(/-(\d+)\.md/.exec(a)![1]!) - +(/-(\d+)\.md/.exec(b)![1]!));
 
 const rd = await AdbReader.open(new SyncIO('D:/accelon3/taisho.adb'));
 const s = new SearchSession(rd);
@@ -73,7 +74,7 @@ let okU = 0, okM = 0, miss = 0, interp = 0, tot = 0;
 const t0 = Date.now();
 for (const f of files) {
   const base = f.replace(/\.md$/, '');
-  const lines = fs.readFileSync(`${ROOT}/${f}`, 'utf8').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').split('\n');
+  const lines = fs.readFileSync(`${RAW}/${f}`, 'utf8').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').split('\n');
   const volRows: string[][] = [];
   let prevRank = 0;
   let pending: { kp: string } | null = null;

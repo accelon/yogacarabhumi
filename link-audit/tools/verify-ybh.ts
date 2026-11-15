@@ -4,6 +4,7 @@ import { openAdb } from 'D:/2026/adb-converter/ts/tools/adb-skill/engine.ts';
 import { loadTrees, loadTree } from 'D:/2026/adb-converter/ts/src/accelon26/search.ts';
 
 const ROOT = 'D:/2026/yogacarabhumi-dila';
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
 const ADB = 'D:/2026/_scratch-ybh/ybh/ybh.adb';
 const o: string[] = []; const P = (...a: unknown[]) => o.push(a.join(' '));
 
@@ -13,10 +14,10 @@ const seriesOf = (b: string) => (b.match(/^(.*)-(?:\d+|k|a)$/) || [, b])[1];
 const strip = (t: string) => t.replace(/\[\[[\s\S]*?\]\](?!\])/g, '').replace(/\[\^[^\]]+\]:?/g, '')
   .replace(/\^kp[D#][\w#\-]*/g, '').replace(/<[^>]*>/g, '').replace(/[#*`|>\-]/g, '');
 let bad = 0; const badEx: string[] = []; let files = 0;
-for (const f of fs.readdirSync(ROOT).filter(x => x.endsWith('.md'))) {
+for (const f of fs.readdirSync(RAW).filter(x => x.endsWith('.md'))) {
   const base = f.replace(/\.md$/, ''); if (!CN.includes(seriesOf(base))) continue;
   files++;
-  const t = strip(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+  const t = strip(fs.readFileSync(path.join(RAW, f), 'utf8'));
   const cjk = (t.match(/[\u4e00-\u9fff]/g) || []).length;
   const tib = (t.match(/[\u0f00-\u0fff]/g) || []).length;
   const lat = (t.match(/[A-Za-z]/g) || []).length;

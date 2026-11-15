@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import { AdbReader, SyncIO } from 'D:/2026/adb-converter/ts/src/accelon26/adb.ts';
 import { SearchSession } from 'D:/2026/adb-converter/ts/src/accelon26/search.ts';
 
-const md = fs.readFileSync('D:/2026/yogacarabhumi-dila/T1579-1.md', 'utf8').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').split('\n');
+const md = fs.readFileSync('D:/2026/yogacarabhumi-dila/raw/T1579-1.md', 'utf8').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').split('\n');
 // 起句：只剝「CBETA 沒有的 DILA 添加物」——書目連結行、註碼〔^n〕、括注拉丁（梵roma）。
 // **保留漢字與標點**（？。；，、）——先前刪標點會把「云何夢？謂由」壓成連寫串，
 // 引擎「連寫＝短語」要求字字相鄰，卡在問號 token 上匹配不到（2026-11-13 修正：那是假陰性）。

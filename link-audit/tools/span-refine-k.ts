@@ -35,7 +35,7 @@ const { SearchSession } = await import('D:/2026/adb-converter/ts/src/accelon26/s
 const { pageHanTextOf } = await import('D:/2026/adb-converter/ts/src/accelon26/page-text.ts');
 const { hanChars } = await import('D:/2026/adb-converter/ts/src/accelon26/han.ts');
 
-const V = 'D:/2026/yogacarabhumi-dila', SCR = 'D:/2026/_scratch-ybh';
+const V = 'D:/2026/yogacarabhumi-dila/raw', SCR = 'D:/2026/_scratch-ybh';
 const DRY = process.argv.includes('--dry');
 const argOf = (k: string): string | undefined => process.argv.find((x) => x.startsWith(k + '='))?.split('=')[1];
 const LIMIT = +(argOf('--limit') ?? '0');

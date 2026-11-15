@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /** 逐段調試 kemon 匹配：報告 PXJ-H-1.md 鏈行匹配/漏配原因。 */
 import fs from 'node:fs';
-const t = fs.readFileSync('D:/2026/yogacarabhumi-dila/PXJ-H-1.md', 'utf8').replace(/\r\n?/g, '\n');
+const t = fs.readFileSync('D:/2026/yogacarabhumi-dila/raw/PXJ-H-1.md', 'utf8').replace(/\r\n?/g, '\n');
 const lines = t.split('\n');
 const GAN = '甲乙丙丁戊己庚辛壬癸', ZHI = '子丑寅卯辰巳午未申酉戌亥';
 const tierOfChar = (c: string) => { const g = GAN.indexOf(c); return g >= 0 ? g + 1 : ZHI.indexOf(c) + 11; };

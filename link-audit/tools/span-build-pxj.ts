@@ -9,7 +9,8 @@ import { AdbReader, SyncIO } from 'D:/2026/adb-converter/ts/src/accelon26/adb.ts
 import { SearchSession } from 'D:/2026/adb-converter/ts/src/accelon26/search.ts';
 
 const ROOT = 'D:/2026/yogacarabhumi-dila';
-const files = fs.readdirSync(ROOT).filter((f) => /^PXJ-H-\d+\.md$/.test(f)).sort((a, b) => +(/-(\d+)\.md/.exec(a)![1]!) - +(/-(\d+)\.md/.exec(b)![1]!));
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
+const files = fs.readdirSync(RAW).filter((f) => /^PXJ-H-\d+\.md$/.test(f)).sort((a, b) => +(/-(\d+)\.md/.exec(a)![1]!) - +(/-(\d+)\.md/.exec(b)![1]!));
 
 const rd = await AdbReader.open(new SyncIO('D:/accelon3/taisho.adb'));
 const s = new SearchSession(rd);
@@ -67,7 +68,7 @@ const t0 = Date.now();
 let prevRank = 0;   // 披尋記卷序即論本卷序，跨卷單調成立
 for (const f of files) {
   const base = f.replace(/\.md$/, '');
-  const lines = fs.readFileSync(`${ROOT}/${f}`, 'utf8').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').split('\n');
+  const lines = fs.readFileSync(`${RAW}/${f}`, 'utf8').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').split('\n');
   let pending: string | null = null;
   const volRows: string[][] = [];
   for (const ln of lines) {

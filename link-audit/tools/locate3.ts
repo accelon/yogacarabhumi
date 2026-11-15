@@ -3,6 +3,7 @@ import { VaPaMapper } from 'D:/2026/adb-converter/ts/src/accelon26/vapa.ts';
 import fs from 'fs';
 
 const ROOT = 'D:/2026/yogacarabhumi-dila';
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
 const out: string[] = []; const P = (...a: unknown[]) => out.push(a.join(' '));
 const reader = await AdbReader.open(new SyncIO('D:/accelon3/taisho.adb'));
 const mapper = new VaPaMapper(reader); await mapper.init();
@@ -22,13 +23,13 @@ P('  ' + Object.entries(colCount).map(([k, v]) => k + '欄:' + v).join('  ') + '
 
 // 引址中「找不到」的是哪些欄
 const RE = /大正(?:藏)?[：:]?\s*(?:冊)?\s*(\d+)[，,\s]+(\d+)([a-d])(\d*)/g;
-const files = fs.readdirSync(ROOT).filter(f => /^T1579-\d+\.md$/.test(f)).sort((a, b) => +a.match(/\d+/)![0] - +b.match(/\d+/)![0]);
+const files = fs.readdirSync(RAW).filter(f => /^T1579-\d+\.md$/.test(f)).sort((a, b) => +a.match(/\d+/)![0] - +b.match(/\d+/)![0]);
 const missCol: Record<string, number> = { a: 0, b: 0, c: 0, d: 0 };
 const hitCol: Record<string, number> = { a: 0, b: 0, c: 0, d: 0 };
 type Job = { f: string; line: number; id: string; row: number; key: string };
 const jobs: Job[] = [];
 for (const f of files) {
-  const md = fs.readFileSync(ROOT + '/' + f, 'utf8').split('\n');
+  const md = fs.readFileSync(RAW + '/' + f, 'utf8').split('\n');
   for (let i = 0; i < md.length; i++) {
     const t = md[i]; if (!/大正/.test(t)) continue;
     RE.lastIndex = 0; const m = RE.exec(t); if (!m || +m[1] !== 30) continue;

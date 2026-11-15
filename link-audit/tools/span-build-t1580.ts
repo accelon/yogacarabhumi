@@ -18,7 +18,7 @@
  */
 import fs from 'node:fs';
 
-const VAULT = 'D:/2026/yogacarabhumi-dila';
+const VAULT = 'D:/2026/yogacarabhumi-dila/raw';
 const SCR = 'D:/2026/_scratch-ybh';
 
 const GENERIC = new Set(['總說', '別釋', '結', '徵', '顯', '問', '答', '頌', '長行', '自性', '所依', '所緣', '所為', '師', '論', '體', '宗要', '藏攝', '料簡']);

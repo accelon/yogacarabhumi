@@ -3,10 +3,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 const ROOT = 'D:/2026/yogacarabhumi-dila';
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
 const WORKS = ['T1579','PXJ-H','T1580','T1828','T1829','T2801','T2802','T2259','T1581','T1582','T1583','T1584','T1602','T1604','T1605','T1606','X0794'];
 const CN = new Set(WORKS);
 const seriesOf = (b: string) => (b.match(/^(.*)-(?:\d+|k|a)$/) || [, b])[1];
-const files = fs.readdirSync(ROOT).filter((f) => f.endsWith('.md')).sort();
+const files = fs.readdirSync(RAW).filter((f) => f.endsWith('.md')).sort();
 
 // 定義集：base → tier → Set<seq>；work → Set<kp>
 const defByVolTier = new Map<string, Map<number, Set<number>>>();
@@ -17,7 +18,7 @@ for (const f of files) {
   const ser = seriesOf(base);
   if (!CN.has(ser)) continue;
   fileExists.add(base);
-  const t = fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/\r\n?/g, '\n');
+  const t = fs.readFileSync(path.join(RAW, f), 'utf8').replace(/\r\n?/g, '\n');
   const m = defByWork.get(ser) ?? new Set<string>();
   const byTier = new Map<number, Set<number>>();
   for (const hm of t.matchAll(/^#{1,6} .*?\^kpD(\d+)-(\d+)\s*$/gm)) {
@@ -35,7 +36,7 @@ const dead = new Map<string, Dead>();
 for (const f of files) {
   const base = f.replace(/\.md$/, '');
   if (!CN.has(seriesOf(base))) continue;
-  const lines = fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/\r\n?/g, '\n').split('\n');
+  const lines = fs.readFileSync(path.join(RAW, f), 'utf8').replace(/\r\n?/g, '\n').split('\n');
   lines.forEach((ln, i) => {
     for (const m of ln.matchAll(/\[\[([^\]|#]+)#\^(kpD(\d+)-(\d+))[^\]]*\]\]/g)) {
       const tgt = m[1]!.trim();

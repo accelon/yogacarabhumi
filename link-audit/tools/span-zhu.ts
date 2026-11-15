@@ -33,7 +33,7 @@ const { AdbReader, SyncIO } = await import('D:/2026/adb-converter/ts/src/accelon
 const { SearchSession } = await import('D:/2026/adb-converter/ts/src/accelon26/search.ts');
 const { pageHanTextOf } = await import('D:/2026/adb-converter/ts/src/accelon26/page-text.ts');
 
-const VAULT = 'D:/2026/yogacarabhumi-dila', SCR = 'D:/2026/_scratch-ybh';
+const VAULT = 'D:/2026/yogacarabhumi-dila/raw', SCR = 'D:/2026/_scratch-ybh';
 const SER = process.argv[2] ?? 'T1580';
 const FULL_Q = ['T1580', 'T2801', 'T2259'].includes(SER);
 const DEDUPE = SER === 'PXJ-H';                    // 科判行已發鏈的部，段落不重複

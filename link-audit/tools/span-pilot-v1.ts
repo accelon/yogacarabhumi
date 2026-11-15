@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import { AdbReader, SyncIO } from 'D:/2026/adb-converter/ts/src/accelon26/adb.ts';
 import { SearchSession } from 'D:/2026/adb-converter/ts/src/accelon26/search.ts';
 
-const md = fs.readFileSync('D:/2026/yogacarabhumi-dila/T1579-1.md', 'utf8').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').split('\n');
+const md = fs.readFileSync('D:/2026/yogacarabhumi-dila/raw/T1579-1.md', 'utf8').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').split('\n');
 
 // 起句：去掉《…》參考行、腳註、括注拉丁、標點，取前 K 個漢字
 const K = 10;

@@ -1,5 +1,5 @@
 /**
- * 反鏈修復上機實測（exe f800cf6f21f1 19:09 版，已含母區 19ccdb8 的 revPageKey）＋ R7 兩格補驗。
+ * 反鏈修復上機實測（跑當前 `D:\accelon3\accelon26.exe`，先記 sha256 再測；本輪 `a83921cb8157` 20:30 版含母區 19ccdb8）。
  * 真 ybh.adb（v25，sha 1627b025）＋ taisho.adb 同開，點帶 #a-b 的聯，量：
  *   ① __revBar.count 是否 >0（舊版恒 0）
  *   ② .xrefRevBar 是否出現、data-revhost／revpage／revlistname 是否齊
@@ -10,7 +10,7 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 const { Cdp, loadAdb } = await import('D:/2026/adb-converter/ts/tools/_cdp.ts');
-const PORT = 9453, WVDATA = 'D:/2026/_scratch-ybh/wv-revfix-' + Date.now();
+const PORT = 9477, WVDATA = 'D:/2026/_scratch-ybh/wv-revfix-' + Date.now();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 fs.mkdirSync(WVDATA, { recursive: true });
 const kids: any[] = [];

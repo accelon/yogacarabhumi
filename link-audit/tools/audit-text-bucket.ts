@@ -3,16 +3,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
 const ROOT = 'D:/2026/yogacarabhumi-dila';
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
 const WORKS = ['T1579','PXJ-H','T1580','T1828','T1829','T2801','T2802','T2259','T1581','T1582','T1583','T1584','T1602','T1604','T1605','T1606','X0794'];
 const CN = new Set(WORKS);
 const seriesOf = (b: string) => (b.match(/^(.*)-(?:\d+|k|a)$/) || [, b])[1];
 const defRe = /^#{1,6} .*?\^(kpD\d+-\d+)\s*$/gm;
-const files = fs.readdirSync(ROOT).filter((f) => f.endsWith('.md')).sort();
+const files = fs.readdirSync(RAW).filter((f) => f.endsWith('.md')).sort();
 const serKp = new Map<string, Map<string, string[]>>();
 for (const f of files) {
   const base = f.replace(/\.md$/, ''); const ser = seriesOf(base);
   if (!CN.has(ser)) continue;
-  const t = fs.readFileSync(path.join(ROOT, f), 'utf8');
+  const t = fs.readFileSync(path.join(RAW, f), 'utf8');
   const mm = serKp.get(ser) ?? new Map<string, string[]>();
   for (const m of t.matchAll(defRe)) { const arr = mm.get(m[1]) ?? []; if (!arr.includes(base)) arr.push(base); mm.set(m[1], arr); }
   serKp.set(ser, mm);
@@ -22,7 +23,7 @@ const collideSamples: string[] = []; const undefSamples: string[] = []; const no
 for (const f of files) {
   const base = f.replace(/\.md$/, ''); const ser = seriesOf(base);
   if (!CN.has(ser)) continue;
-  const t = fs.readFileSync(path.join(ROOT, f), 'utf8');
+  const t = fs.readFileSync(path.join(RAW, f), 'utf8');
   for (const m of t.matchAll(/\[\[([^\]|#]+)(?:#([^\]|]*))?(?:\|[^\]]*)?\]\]/g)) {
     const tgt = m[1].trim(); const anchor = (m[2] || '').replace(/^\^/, '').trim();
     const tSer = seriesOf(tgt);

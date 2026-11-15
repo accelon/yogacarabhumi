@@ -24,7 +24,7 @@ const { AdbReader, SyncIO } = await import('D:/2026/adb-converter/ts/src/accelon
 // ground truth 引文（完整行）
 const GZ = /^[甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥][一二三四五六七八九十]{1,3}、/;
 const quoteOf = new Map<string, string>();
-for (const f of fs.readdirSync('D:/2026/yogacarabhumi-dila').filter((x) => /^(T1579|PXJ-H)-\d+\.md$/.test(x))) {
+for (const f of fs.readdirSync('D:/2026/yogacarabhumi-dila/raw').filter((x) => /^(T1579|PXJ-H)-\d+\.md$/.test(x))) {
   const base = f.replace(/\.md$/, '');
   const ls = fs.readFileSync(`D:/2026/yogacarabhumi-dila/${f}`, 'utf8').replace(/\r\n?/g, '\n').split('\n');
   let pending: string | null = null;

@@ -65,7 +65,9 @@
     if (MISSING_TARGETS.hasOwnProperty(target)) {
       return '<span class="missing-link">' + label + '</span>';
     }
-    var href = '#/' + target + (anchor ? '?id=' + anchor : '');
+    // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar）→ 裸檔名的互鏈一律指進 raw/。
+    // 已帶路徑 separator 的目標（将来若把别的資料放别處）原樣通過。
+    var href = '#/raw/' + target + (anchor ? '?id=' + anchor : '');
     return '<a href="' + href + '" class="wikilink">' + label + '</a>';
   }
 
@@ -179,7 +181,7 @@
 
   window.$docsify = {
     name: '瑜伽師地論 · DILA 校勘注記',
-    repo: 'avatarqz/yogacarabhumi-dila',
+    repo: 'accelon/yogacarabhumi',
     homepage: '索引.md',
     loadSidebar: true,
     subMaxLevel: 3,

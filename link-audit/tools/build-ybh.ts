@@ -17,6 +17,7 @@ import { VaPaMapper } from 'D:/2026/adb-converter/ts/src/accelon26/vapa.ts';
 import { nodeAnchorInfo, anchorVa } from 'D:/2026/adb-converter/ts/src/accelon26/page-text.ts';
 
 const ROOT = 'D:/2026/yogacarabhumi-dila';
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
 const OUTDIR = 'D:/2026/_scratch-ybh/ybh';
 fs.mkdirSync(OUTDIR, { recursive: true });
 
@@ -52,7 +53,7 @@ const baseKps = new Set<string>();               // `${base}#${kp}`
 const appDefs = new Set<string>();               // `${base}#${appID}`（-a 校勘記行尾 ^app… 定義；權威源 xml-p5\T）
 
 // ---- 選檔 + 語言覆核 ----
-const all = fs.readdirSync(ROOT).filter(f => f.endsWith('.md'));
+const all = fs.readdirSync(RAW).filter(f => f.endsWith('.md'));
 const picked: { file: string; base: string; ser: string; vol: number; kind: 'main' | 'k' | 'a' }[] = [];
 const rejected: string[] = [];
 for (const f of all) {
@@ -65,7 +66,7 @@ for (const f of all) {
 // 語言覆核：漢文檔的 CJK 佔比應壓倒性
 const langReport: string[] = [];
 for (const p of picked) {
-  const t = fs.readFileSync(path.join(ROOT, p.file), 'utf8');
+  const t = fs.readFileSync(path.join(RAW, p.file), 'utf8');
   const cjk = (t.match(/[\u4e00-\u9fff]/g) || []).length;
   const tib = (t.match(/[\u0f00-\u0fff]/g) || []).length;
   const lat = (t.match(/[A-Za-z]/g) || []).length;
@@ -88,7 +89,7 @@ function headTier(title: string, hashes: number): number {
   return Math.max(1, Math.min(54, hashes));
 }
 for (const p of picked) {
-  const t = fs.readFileSync(path.join(ROOT, p.file), 'utf8');
+  const t = fs.readFileSync(path.join(RAW, p.file), 'utf8');
   for (const m of t.matchAll(/^#{1,6} .*?\^(kpD\d+-\d+)\s*$/gm)) {
     kpVols.set(`${p.ser}#${m[1]}`, (kpVols.get(`${p.ser}#${m[1]}`) ?? new Set()).add(p.base));
     baseKps.add(`${p.base}#${m[1]}`);
@@ -115,12 +116,12 @@ for (const [ser] of WORKS) {
   const kf = picked.find(p => p.ser === ser && p.kind === 'k');
   if (!kf) continue;
   const kl: number[] = []; const kt: string[] = [];
-  for (const m of fs.readFileSync(path.join(ROOT, kf.file), 'utf8').matchAll(/^(#{1,6})\s+(.*)$/gm)) {
+  for (const m of fs.readFileSync(path.join(RAW, kf.file), 'utf8').matchAll(/^(#{1,6})\s+(.*)$/gm)) {
     kl.push(headTier(m[2]!, m[1]!.length)); kt.push(mirrorNorm(m[2]!));
   }
   const mt: string[] = []; const msT: number[] = []; const mk: string[] = [];
   for (const p of picked.filter(p2 => p2.ser === ser && p2.kind === 'main').sort((a, b) => a.vol - b.vol)) {
-    for (const m of fs.readFileSync(path.join(ROOT, p.file), 'utf8').matchAll(/^(#{1,6})\s+(.*)$/gm)) {
+    for (const m of fs.readFileSync(path.join(RAW, p.file), 'utf8').matchAll(/^(#{1,6})\s+(.*)$/gm)) {
       msT.push(headTier(m[2]!, m[1]!.length)); mt.push(mirrorNorm(m[2]!));
       const kp = /\^(kpD\d+-\d+)/.exec(m[2]!);            // 主卷這條的節點錨（大綱沒有錨，靠鏡像位借）
       mk.push(kp ? `${p.base}#${kp[1]}` : '');
@@ -531,7 +532,7 @@ for (const [ser, name] of WORKS) {
     // v14.2：章不再宣告子鏈——鏈由 篇 自宣告（封閉詞彙），主樹不再經 章.t 把 16 個
     // 家族鏈全拉進來（170k 行 → ~12k）。家族樹的嵌套靠 科X01 自宣告子鏈，不受影響。
     lines.push(`<章 id="${encodeXmlAttr(p.base)}"><卷次 id="${encodeXmlAttr(p.base)}"/>${esc(label)}</章>`);
-    const bl = bodyLines(fs.readFileSync(path.join(ROOT, p.file), 'utf8'), famOf(p), famChildChain(famOf(p)), p.base, p.kind === 'k' ? outlineTiers.get(ser) : undefined, p.kind === 'k' ? outlineKeys.get(ser) : undefined);
+    const bl = bodyLines(fs.readFileSync(path.join(RAW, p.file), 'utf8'), famOf(p), famChildChain(famOf(p)), p.base, p.kind === 'k' ? outlineTiers.get(ser) : undefined, p.kind === 'k' ? outlineKeys.get(ser) : undefined);
     totalJie += bl.filter(x => /^<科[一-鿿]?\d\d/.test(x)).length;
     totalNotes += bl.filter(x => x.startsWith('<釋')).length;
     for (const l of bl) lines.push(l);

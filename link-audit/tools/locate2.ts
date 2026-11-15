@@ -3,6 +3,7 @@ import { VaPaMapper } from 'D:/2026/adb-converter/ts/src/accelon26/vapa.ts';
 import fs from 'fs';
 
 const ROOT = 'D:/2026/yogacarabhumi-dila';
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
 const out: string[] = []; const P = (...a: unknown[]) => out.push(a.join(' '));
 const reader = await AdbReader.open(new SyncIO('D:/accelon3/taisho.adb'));
 const mapper = new VaPaMapper(reader); await mapper.init();
@@ -37,10 +38,10 @@ function nextBody(md: string[], from: number): string {
   }
   return '';
 }
-const files = fs.readdirSync(ROOT).filter(f => /^T1579-\d+\.md$/.test(f));
+const files = fs.readdirSync(RAW).filter(f => /^T1579-\d+\.md$/.test(f));
 let okCol = 0, badCol = 0, rowOk = 0, rowBad = 0; const samples: string[] = [];
 for (const f of files) {
-  const md = fs.readFileSync(ROOT + '/' + f, 'utf8').split('\n');
+  const md = fs.readFileSync(RAW + '/' + f, 'utf8').split('\n');
   for (let i = 0; i < md.length; i++) {
     const m = RE.exec(md[i]); if (!m || +m[1] !== 30) continue; RE.lastIndex = 0;
     const id = '30p' + m[2] + m[3], ln = V30.map.get(id);

@@ -3,6 +3,7 @@ import { VaPaMapper } from 'D:/2026/adb-converter/ts/src/accelon26/vapa.ts';
 import fs from 'fs';
 
 const ROOT = 'D:/2026/yogacarabhumi-dila';
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
 const out: string[] = []; const P = (...a: unknown[]) => out.push(a.join(' '));
 const reader = await AdbReader.open(new SyncIO('D:/accelon3/taisho.adb'));
 const mapper = new VaPaMapper(reader); await mapper.init();
@@ -27,12 +28,12 @@ const cache = new Map<number, Awaited<ReturnType<typeof buildVol>>>();
 const getVol = async (k: number) => cache.get(k) ?? (cache.set(k, await buildVol(k)), cache.get(k)!);
 
 // 1) 本庫的大正引址到底寫成什麼樣
-const files = fs.readdirSync(ROOT).filter(f => f.endsWith('.md') && !/^_|README|索引/.test(f));
+const files = fs.readdirSync(RAW).filter(f => f.endsWith('.md') && !/^_|README|索引/.test(f));
 const RE = /大正(?:藏)?[：:]?\s*(?:冊)?\s*(\d+)[，,\s]+(\d+)([a-d])(\d*)/g;
 const cites: { f: string; line: number; v: number; p: number; col: string; row: string; raw: string }[] = [];
 const shapes = new Map<string, number>();
 for (const f of files) {
-  const ls = fs.readFileSync(ROOT + '/' + f, 'utf8').split('\n');
+  const ls = fs.readFileSync(RAW + '/' + f, 'utf8').split('\n');
   for (let i = 0; i < ls.length && cites.length < 6000; i++) {
     for (const m of ls[i].matchAll(RE)) {
       shapes.set(m[0].replace(/\d+/g, 'N'), (shapes.get(m[0].replace(/\d+/g, 'N')) ?? 0) + 1);

@@ -56,7 +56,7 @@ def read(p: Path) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description='ybh 死錨自動修復器（只修有證據者）')
-    ap.add_argument('--root', default=r'D:/2026/yogacarabhumi-dila', help='vault 目錄')
+    ap.add_argument('--root', default=r'D:/2026/yogacarabhumi-dila/raw', help='vault 目錄（語料 md 自 2026-11-15 起在 raw/）')
     ap.add_argument('--apply', action='store_true', help='實際寫檔（默認 dry-run）')
     ap.add_argument('--report', default='', help='報告 CSV 輸出路徑')
     args = ap.parse_args()

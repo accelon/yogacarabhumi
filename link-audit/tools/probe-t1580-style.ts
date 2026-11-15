@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-const t = fs.readFileSync('D:/2026/yogacarabhumi-dila/T1580-1.md', 'utf8').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+const t = fs.readFileSync('D:/2026/yogacarabhumi-dila/raw/T1580-1.md', 'utf8').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
 const ls = t.split('\n');
 const cnt = (re: RegExp) => ls.filter((l) => re.test(l)).length;
 const occ = (s: string) => t.split(s).length - 1;

@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 const ROOT = 'D:/2026/yogacarabhumi-dila';
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
 const OUT = ROOT + '/link-audit/data';
-const files = fs.readdirSync(ROOT).filter(f => f.endsWith('.md'));
+const files = fs.readdirSync(RAW).filter(f => f.endsWith('.md'));
 const norm = t => (t || '').replace(/^[A-Za-z甲乙丙丁戊己庚辛壬癸]\s*\d*\s*/, '')
   .replace(/[（(][^）)]*[）)]/g, '').replace(/缺/g, '').replace(/\d+/g, '')
   .replace(/[\s，。、：；【】〔〕《》「」“”‘’?？·]/g, '').slice(0, 24);
@@ -10,7 +11,7 @@ const norm = t => (t || '').replace(/^[A-Za-z甲乙丙丁戊己庚辛壬癸]\s*\
 const byFileLabel = new Map(); const NODE = new Map(); const DEFKEY = new Map();
 for (const f of files) {
   const base = f.replace(/\.md$/, ''); const set = new Set(); const m2 = new Map();
-  const lines = fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n');
+  const lines = fs.readFileSync(path.join(RAW, f), 'utf8').split('\n');
   for (let i = 0; i < lines.length; i++) { const m = lines[i].match(/^(#{1,6})\s+(.*?)\s+\^kpD(\d+)-(\d+)\s*$/); if (!m) continue;
     set.add(+m[3] + ':' + +m[4]); const key = base + '#kpD' + m[3] + '-' + m[4]; const lb = norm(m[2]);
     NODE.set(key, { file: base, label: lb, raw: m[2], tier: +m[3], seq: +m[4], line: i + 1 });
@@ -20,7 +21,7 @@ for (const f of files) {
 const GOOD = [];
 for (const f of files) {
   const base = f.replace(/\.md$/, ''); let ctx = null;
-  for (const ln of fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n')) {
+  for (const ln of fs.readFileSync(path.join(RAW, f), 'utf8').split('\n')) {
     const hm = ln.match(/^(#{1,6})\s+(.*?)\s+\^kpD(\d+)-(\d+)\s*$/); if (hm) ctx = base + '#kpD' + hm[3] + '-' + hm[4];
     for (const m of ln.matchAll(/\[\[([\s\S]*?)\]\](?!\])/g)) {
       const inner = m[1], bar = inner.indexOf('|'), body = (bar >= 0 ? inner.slice(0, bar) : inner).trim();

@@ -4,7 +4,7 @@
  * 口徑與 span-t1580.ts 完全一致：段起＝空行/標題/《》/腳註/表行之後首行、且剝鏈後 ≥8 漢字。
  */
 import fs from 'node:fs';
-const VAULT = 'D:/2026/yogacarabhumi-dila';
+const VAULT = 'D:/2026/yogacarabhumi-dila/raw';
 const SERIES = ['T1580', 'T1828', 'T1829', 'PXJ-H', 'T2801', 'T2802', 'T2259', 'T1581', 'T1582', 'T1583', 'T1584', 'T1602', 'T1604', 'T1605', 'T1606', 'X0794'];
 const hanOnly = (x: string) => x.replace(/[^一-鿿]/g, '');
 // 已驗窗（spans-j-verified.tsv）覆蓋的 base

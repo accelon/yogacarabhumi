@@ -1,10 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 const ROOT = 'D:/2026/yogacarabhumi-dila';
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
 const OUT = 'D:/2026/yogacarabhumi-dila/link-audit/data';
 const o = []; const P = (...a) => o.push(a.join(' '));
 const nf = n => Number(n).toLocaleString('en-US');
-const files = fs.readdirSync(ROOT).filter(f => f.endsWith('.md'));
+const files = fs.readdirSync(RAW).filter(f => f.endsWith('.md'));
 const seriesOf = b => (b.match(/^(.*)-(?:\d+|k|a)$/) || [, b])[1];
 const norm = t => (t || '').replace(/^[A-Za-z甲乙丙丁戊己庚辛壬癸]\s*\d*\s*/, '').replace(/\d+/g, '')
   .replace(/[\s，。、：；（）()【】〔〕《》「」“”‘’?？·]/g, '').slice(0, 24);
@@ -14,7 +15,7 @@ const NODE = new Map();   // key -> {file,series,tier,seq,label,line}
 const DEFKEY = new Map(); // file -> Set(tier:seq)
 for (const f of files) {
   const base = f.replace(/\.md$/, '');
-  const lines = fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n');
+  const lines = fs.readFileSync(path.join(RAW, f), 'utf8').split('\n');
   const set = new Set();
   for (let i = 0; i < lines.length; i++) {
     const m = lines[i].match(/^(#{1,6})\s+(.*?)\s+\^kpD(\d+)-(\d+)\s*$/);
@@ -30,7 +31,7 @@ const EDGES = [];      // {s,t,label}
 let links = 0, resolved = 0, noCtx = 0;
 for (const f of files) {
   const base = f.replace(/\.md$/, '');
-  const lines = fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n');
+  const lines = fs.readFileSync(path.join(RAW, f), 'utf8').split('\n');
   let ctx = null;
   for (const ln of lines) {
     const hm = ln.match(/^(#{1,6})\s+(.*?)\s+\^kpD(\d+)-(\d+)\s*$/);

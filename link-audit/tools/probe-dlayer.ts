@@ -6,7 +6,7 @@
  * 本腳本量：每部有多少科判可由 D1(T1579)/D2(PXJ) 直接落地、段落覆蓋多少。
  */
 import fs from 'node:fs';
-const VAULT = 'D:/2026/yogacarabhumi-dila';
+const VAULT = 'D:/2026/yogacarabhumi-dila/raw';
 const win = new Map<string, { page: string; js: number; je: number }>();
 for (const ln of fs.readFileSync('D:/2026/_scratch-ybh/spans-j-verified.tsv', 'utf8').split(/\r?\n/).slice(1)) {
   const c = ln.split('\t');

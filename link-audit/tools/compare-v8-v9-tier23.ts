@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 const ROOT = 'D:/2026/yogacarabhumi-dila';
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
 const GAN = '甲乙丙丁戊己庚辛壬癸', ZHI = '子丑寅卯辰巳午未申酉戌亥';
 const tierOfChar = (c: string) => { const g = GAN.indexOf(c); return g >= 0 ? g + 1 : ZHI.indexOf(c) + 11; };
 function cnParse(x: string): number {
@@ -12,10 +13,10 @@ function cnParse(x: string): number {
   m = /^(.)十(.?)$/.exec(x); if (m) { const a = U.indexOf(m[1]!) + 1; if (a < 1) return 0; return a * 10 + (m[2] ? U.indexOf(m[2]!) + 1 : 0); }
   return U.indexOf(x) + 1;
 }
-const files = fs.readdirSync(ROOT).filter((f) => /^PXJ-H-\d+\.md$/.test(f)).sort((a, b) => +(/(\d+)\.md/.exec(a)![1]!) - +(/(\d+)\.md/.exec(b)![1]!));
+const files = fs.readdirSync(RAW).filter((f) => /^PXJ-H-\d+\.md$/.test(f)).sort((a, b) => +(/(\d+)\.md/.exec(a)![1]!) - +(/(\d+)\.md/.exec(b)![1]!));
 const per = new Map<number, { tot: number; v8: number; v9: number }>();
 for (const f of files) {
-  const lines = fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/\r\n?/g, '\n').split('\n');
+  const lines = fs.readFileSync(path.join(RAW, f), 'utf8').replace(/\r\n?/g, '\n').split('\n');
   type H = { tier: number; title: string; sp: number; li: number; s8: boolean; s9: boolean };
   const hds: H[] = [];
   lines.forEach((ln, li) => {

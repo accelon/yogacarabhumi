@@ -25,20 +25,21 @@ console.log(`超過 60 行的比例：${(100 * dist.filter((x) => x > 60).length
 
 // 死錨清單（v4 仍留文字的那些 kpD 引用、目標卷未定義）——給 DILA 端
 const ROOT = 'D:/2026/yogacarabhumi-dila';
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
 const WORKS = ['T1579','PXJ-H','T1580','T1828','T1829','T2801','T2802','T2259','T1581','T1582','T1583','T1584','T1602','T1604','T1605','T1606','X0794'];
 const CN = new Set(WORKS);
 const seriesOf = (b: string) => (b.match(/^(.*)-(?:\d+|k|a)$/) || [, b])[1];
 const defined = new Set<string>();
-for (const f of fs.readdirSync(ROOT).filter((x) => x.endsWith('.md'))) {
+for (const f of fs.readdirSync(RAW).filter((x) => x.endsWith('.md'))) {
   const base = f.replace(/\.md$/, '');
   if (!CN.has(seriesOf(base))) continue;
-  for (const m of fs.readFileSync(ROOT + '/' + f, 'utf8').matchAll(/^#{1,6} .*?\^(kpD\d+-\d+)\s*$/gm)) defined.add(`${base}#${m[1]}`);
+  for (const m of fs.readFileSync(RAW + '/' + f, 'utf8').matchAll(/^#{1,6} .*?\^(kpD\d+-\d+)\s*$/gm)) defined.add(`${base}#${m[1]}`);
 }
 const dead = new Map<string, number>();
-for (const f of fs.readdirSync(ROOT).filter((x) => x.endsWith('.md'))) {
+for (const f of fs.readdirSync(RAW).filter((x) => x.endsWith('.md'))) {
   const base = f.replace(/\.md$/, '');
   if (!CN.has(seriesOf(base))) continue;
-  const t = fs.readFileSync(ROOT + '/' + f, 'utf8');
+  const t = fs.readFileSync(RAW + '/' + f, 'utf8');
   for (const m of t.matchAll(/\[\[([^\]|#]+)#\^(kpD\d+-\d+)/g)) {
     const tgt = m[1].trim();
     if (!CN.has(seriesOf(tgt))) continue;

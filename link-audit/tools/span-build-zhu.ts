@@ -16,7 +16,7 @@
  */
 import fs from 'node:fs';
 
-const VAULT = 'D:/2026/yogacarabhumi-dila';
+const VAULT = 'D:/2026/yogacarabhumi-dila/raw';
 const SCR = 'D:/2026/_scratch-ybh';
 const SER = process.argv[2] ?? 'T1580';
 

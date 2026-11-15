@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = 'D:/2026/yogacarabhumi-dila';
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
 const WORKS = ['T1579','PXJ-H','T1580','T1828','T1829','T2801','T2802','T2259','T1581','T1582','T1583','T1584','T1602','T1604','T1605','T1606','X0794'];
 const CN = new Set(WORKS);
 const seriesOf = (b: string) => (b.match(/^(.*)-(?:\d+|k|a)$/) || [, b])[1];
@@ -17,12 +18,12 @@ const refRe = /\[\[([^\]|#]+)#\^(kpD\d+-\d+)/g;
 const serKp = new Map<string, Map<string, string[]>>();   // ser → kp → [bases 定義序]
 const dupPerFile: string[] = [];
 let defs = 0;
-const files = fs.readdirSync(ROOT).filter((f) => f.endsWith('.md')).sort();
+const files = fs.readdirSync(RAW).filter((f) => f.endsWith('.md')).sort();
 for (const f of files) {
   const base = f.replace(/\.md$/, '');
   const ser = seriesOf(base);
   if (!CN.has(ser)) continue;
-  const t = fs.readFileSync(path.join(ROOT, f), 'utf8');
+  const t = fs.readFileSync(path.join(RAW, f), 'utf8');
   const seen = new Map<string, number>();
   for (const m of t.matchAll(defRe)) {
     defs++;
@@ -49,7 +50,7 @@ for (const f of files) {
   const base = f.replace(/\.md$/, '');
   const ser = seriesOf(base);
   if (!CN.has(ser)) continue;
-  const t = fs.readFileSync(path.join(ROOT, f), 'utf8');
+  const t = fs.readFileSync(path.join(RAW, f), 'utf8');
   for (const m of t.matchAll(refRe)) {
     const tgt = m[1].trim();
     if (!CN.has(seriesOf(tgt))) continue;

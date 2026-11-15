@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 const ROOT = 'D:/2026/yogacarabhumi-dila';
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
 const WORKS = ['T1579','PXJ-H','T1580','T1828','T1829','T2801','T2802','T2259','T1581','T1582','T1583','T1584','T1602','T1604','T1605','T1606','X0794'];
 const CN = new Set(WORKS);
 const seriesOf = (b: string) => (b.match(/^(.*)-(?:\d+|k|a)$/) || [, b])[1];
@@ -14,11 +15,11 @@ const norm = (s: string) => s
 // 目標庫：base|tier → [{seq,title}]
 const tierDefs = new Map<string, { seq: number; title: string }[]>();
 const workKps = new Map<string, Set<string>>();
-for (const f of fs.readdirSync(ROOT).filter((x) => x.endsWith('.md'))) {
+for (const f of fs.readdirSync(RAW).filter((x) => x.endsWith('.md'))) {
   const base = f.replace(/\.md$/, '');
   const ser = seriesOf(base);
   if (!CN.has(ser)) continue;
-  const t = fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/\r\n?/g, '\n');
+  const t = fs.readFileSync(path.join(RAW, f), 'utf8').replace(/\r\n?/g, '\n');
   const s = workKps.get(ser) ?? new Set<string>();
   for (const m of t.matchAll(/^#{1,6}\s+(.*?)\s*\^kpD(\d+)-(\d+)\s*$/gm)) {
     s.add(`kpD${m[2]}-${m[3]}`);
@@ -31,10 +32,10 @@ for (const f of fs.readdirSync(ROOT).filter((x) => x.endsWith('.md'))) {
 // 死錨引用＋其所屬披尋記標題
 const fix = new Map<string, { to: string; why: string }>();
 const ambiguous: string[] = [];
-for (const f of fs.readdirSync(ROOT).filter((x) => x.endsWith('.md'))) {
+for (const f of fs.readdirSync(RAW).filter((x) => x.endsWith('.md'))) {
   const base = f.replace(/\.md$/, '');
   if (!CN.has(seriesOf(base))) continue;
-  const lines = fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/\r\n?/g, '\n').split('\n');
+  const lines = fs.readFileSync(path.join(RAW, f), 'utf8').replace(/\r\n?/g, '\n').split('\n');
   let curTitle = '';
   lines.forEach((ln) => {
     const hm = /^#{1,6}\s+(.*?)\s*$/.exec(ln);

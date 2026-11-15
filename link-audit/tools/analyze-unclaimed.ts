@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 const ROOT = 'D:/2026/yogacarabhumi-dila';
+const RAW = ROOT + '/raw';   // 語料 md 自 2026-11-15 起在 raw/（根目錄只留 README／索引／_sidebar／index.html）
 const GAN = '甲乙丙丁戊己庚辛壬癸', ZHI = '子丑寅卯辰巳午未申酉戌亥';
 const tierOfChar = (c: string) => { const g = GAN.indexOf(c); return g >= 0 ? g + 1 : ZHI.indexOf(c) + 11; };
 const charOfTier = (t: number) => t <= 10 ? GAN[t - 1]! : (t <= 22 ? ZHI[t - 11]! : '');
@@ -22,14 +23,14 @@ const cnGen = (n: number): string => {
   if (n % 10 === 0) return U[n / 10 - 1]! + '十';
   return n < 40 ? '三十' + U[n - 31]! : '四十' + (n === 40 ? '' : U[n - 41]!);
 };
-const files = fs.readdirSync(ROOT).filter((f) => /^PXJ-H-\d+\.md$/.test(f)).sort((a, b) => +(/(\d+)\.md/.exec(a)![1]!) - +(/(\d+)\.md/.exec(b)![1]!));
+const files = fs.readdirSync(RAW).filter((f) => /^PXJ-H-\d+\.md$/.test(f)).sort((a, b) => +(/(\d+)\.md/.exec(a)![1]!) - +(/(\d+)\.md/.exec(b)![1]!));
 const reason = new Map<string, number>();
 const samples: string[] = [];
 const byTier = new Map<number, { hd: number; unclaimed: number }>();
 let totHd = 0, totUn = 0;
 for (const f of files) {
   const base = f.replace(/\.md$/, '');
-  const lines = fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/\r\n?/g, '\n').split('\n');
+  const lines = fs.readFileSync(path.join(RAW, f), 'utf8').replace(/\r\n?/g, '\n').split('\n');
   type H = { tier: number; anchor: string; title: string; sp: number; li: number; claimed: boolean };
   const hds: H[] = [];
   lines.forEach((ln, li) => {
