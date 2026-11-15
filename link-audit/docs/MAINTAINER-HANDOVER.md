@@ -98,8 +98,23 @@ bun run link-audit/tools/verify-all.ts D:\accelon3\ybh.adb v<N>   # 六節全綠
 
 ## 七、本地打包：skill、環境覆寫與自主範圍（2026-11-15 更新）
 
-**已交給你一隻 skill**：`link-audit/skills/ybh-adb-package/SKILL.md`（另有可直接安裝的
-`ybh-adb-package.skill` 封裝檔）。內容只有「打包＋本地驗收＋本地部署」，含完成檢查清單。
+**skill 分三層**（2026-11-15 重整：往後其他文本的維護者也要用，且這些 skill 會上官網分享）：
+
+| skill | 管什麼 | 封裝檔 |
+|---|---|---|
+| `adb-author` | **通用流程**：原料 md → .adb；為什麼驗收必須用閱讀器那支解析器；結構化四原則、互鏈分層、座標系換算、窗的閘門與正控、驗收類別、交付紀律 | `adb-author.skill` |
+| `adb-inspect` | **通用查證**：走 adb MCP API；三條鐵律（禁位元組 grep、不抽全文、行號是行表不是 `\n`）；地址鍵要含冊號且零填充先轉數字；探針自己要有正控與負控 | `adb-inspect.skill` |
+| `ybh-adb-package` | **本專案覆蓋**：原料與跨庫路徑、十七部代號與命名、六節在本專案的實測數字、專案特有缺口 | `ybh-adb-package.skill` |
+
+規則：**通則只寫在 `adb-author`，覆蓋檔只寫差異**。同一件事寫兩處，將來必有一處是錯的
+（我們真發生過兩支腳本各寫一份表格行提取規則、同一條記錄判定不同的事）。
+
+打包由 `bun run link-audit/tools/package-skills.ts` 產生，**確定性**（同來源重複打包 sha 不變，
+已實測兩遍相同）且**標準 unzip 讀得到**（CRC 檢查通過）——「可安裝」不能只由自己寫的讀取器證明。
+清單在 `link-audit/out/skills-dist/manifest.json`，欄位沿用官網 `www/adb/manifest.json` 的形狀，可直接上架。
+交付前四道檢查：frontmatter 可解析且 `name` 與目錄一致、`description` 不空、無憑證與個資樣式
+（email／IP／password／家目錄絕對路徑）、**解壓回讀必須與來源逐字相同**。最後那道當場抓出
+打包器自己的 bug（zip 本檔標頭的壓縮長度欄位在偏移 18，我讀了 24），三只全數報錯才修對。
 
 **先跑體檢，不要直接 build**：
 
