@@ -16,6 +16,7 @@
  * 不重複實作既有判定——能組合就不另寫，避免兩套標準各自漂移。
  */
 import fs from 'node:fs';
+import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { P } from './paths.ts';            // 路徑单一来源，環境可用 YBH_HOME / YBH_SCRATCH / ACCELON_SRC / ACCELON_ADB / TAISHO_ADB 覆寫
@@ -91,7 +92,11 @@ if (!FAST) {
     const t0 = Date.now();
     let out = '', crashed = false;
     try {
-      out = execFileSync('bun', args, { cwd: SCR, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, timeout: 1_500_000 });
+      // **必須從版控目錄跑，不能用 cwd=SCR**：SCR 裡有 46 支同名副本且已分岔，
+      // 用相對檔名委派時 Bun 會解析到 scratch 那份——那等於「PASS 記的是未入版控的程式」，
+      // 我們 review 的那份反而沒被执行（2026-11-15 整理時發現，見 SUMMARY §八#30）。
+      out = execFileSync('bun', args.map((a, k) => (k === 0 ? path.join(import.meta.dirname, a) : a)),
+        { cwd: import.meta.dirname, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, timeout: 1_500_000 });
     } catch (e: any) { out = String(e?.stdout ?? '') + String(e?.stderr ?? e?.message ?? ''); crashed = true; }
     const body = out.trim().split('\n');
     const green = want.test(out) && !crashed;

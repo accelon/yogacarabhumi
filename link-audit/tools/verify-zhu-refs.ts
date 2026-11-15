@@ -46,7 +46,10 @@ for (const f of fs.readdirSync(SCR).filter((x) => /^zhu-refs-.+\.tsv$/.test(x)).
     if (mode === 'none' || mode === 'drop' || mode === 'dup') continue;
     const key = c[4] === '-1' ? c[3]! : `${c[3]}#${c[4]}-${c[5]}`;
     const prev = truth.get(key);
-    if (!prev || (mode === 'Q' && prev.mode !== 'Q')) truth.set(key, { mode, quote: c[7] ?? '' });
+    // Q＝滑窗命中、Q2＝粗窗精修而來（span-refine-k.ts 的記法）：兩者都是已驗證的真值窗，
+    // 只認 'Q' 會把 Q2 記錄誤判成缺漏。此修正原先只存在於 scratch 副本，2026-11-15 回合進版控。
+    const verb = (x: string) => /^Q2?$/.test(x);
+    if (!prev || (verb(mode) && !verb(prev.mode))) truth.set(key, { mode, quote: c[7] ?? '' });
   }
 }
 // ---- 入庫清單 ----
@@ -100,7 +103,7 @@ for (const p of pairs) {
   }
   winOk++;
   const t = truth.get(p.key);
-  if (t?.mode === 'Q') {
+  if (t && /^Q2?$/.test(t.mode)) {                     // Q 與 Q2 都算已驗證真值窗
     if (mark.startsWith(han(t.quote).slice(0, 6))) qOk++;
     else { qBad++; if (fails.length < 10) fails.push(`Q 窗首不符 ${p.key} 期望「${han(t.quote).slice(0, 6)}」得「${mark.slice(0, 8)}」`); }
   }
@@ -110,7 +113,7 @@ const extra = [...got.entries()].filter(([k, v]) => !(want.get(k) ?? 0));
 if (missing.length) console.log('缺發明細（want→got）：' + missing.slice(0, 6).map(([k, v]) => `${k} ${v}→${got.get(k) ?? 0}`).join('  '));
 const totalWant = [...want.values()].reduce((a, b) => a + b, 0);
 const totalGot = [...got.values()].reduce((a, b) => a + b, 0);
-qMiss = pairs.filter((p) => truth.get(p.key)?.mode !== 'Q').length;
+qMiss = pairs.filter((p) => !/^Q2?$/.test(truth.get(p.key)?.mode ?? '')).length;
 console.log(`入庫清單 ${totalWant} 條（${Object.entries(workTally).map(([k, v]) => `${k}:${v}`).join(' ')}）｜adb 回讀 ${totalGot} 條、去重後 ${got.size} 種窗`);
 console.log(`窗長正確 ${winOk}/${pairs.length}、真錯位 ${winBad}、窗尾截短（消費端 VA/PA 家族，起點正確）${tailShort}｜Q 窗首 OK ${qOk}、FAIL ${qBad}（非 Q 窗 ${qMiss}）`);
 console.log(`缺發 ${missing.length} 種｜adb 有而清單無 ${extra.length} 種`);
