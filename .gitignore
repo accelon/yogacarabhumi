@@ -15,3 +15,5 @@ link-audit/out/mail-draft-*
 link-audit/data/mail-contacts.json
 # 對話貼圖等工具暫存輸入（非專案資料）
 .qoder-input-images/
+# skill 打包產物（可從 link-audit/skills/ 確定性重生，不入版控；官網分享用另行上傳）
+link-audit/out/skills-dist/
