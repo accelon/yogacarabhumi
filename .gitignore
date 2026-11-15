@@ -1,3 +1,15 @@
 
 # 卡片呈列用的暫存副本（含大體積 adb 備份），不入版控
 link-audit/deliv/
+# 大體積成品備份（v25/v26/v27 各 48 MB），只在本機做回滾用，不入版控
+/out/
+# Python 編譯產物
+__pycache__/
+*.pyc
+# 信箱執行期狀態與客戶原始留言（含寄件者 IP、瀏覽器 UA、完整來信內容）——
+# 本倉是公開倉，這些只留本機，一律不入版控
+link-audit/data/ybh-mail-state.json
+link-audit/out/mail-dump-*
+link-audit/out/mail-draft-*
+# 客戶聯絡地址（qq_mail_ybh.py 執行時需要，但地址不該寫進公開倉）
+link-audit/data/mail-contacts.json
