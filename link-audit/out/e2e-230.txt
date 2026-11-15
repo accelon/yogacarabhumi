@@ -1,0 +1,25 @@
+exe   = 0f2c67985063
+ybh   = 52e1cec5e527
+頁籤： 瑜伽師地論科判
+
+【場景 A：正文行的《略纂》晶片】
+  畫面上節聯： 58 ｜依標籤： {"本地分中聲聞地第十三初瑜伽處種":1,"B1五識身相應地":1,"略纂":9,"論釋":4,"分門記":1,"C1問答標列十七地名":1,"D1問":1,"披尋記":7,"D2答":1,"D3徵":1,"D4顯":1,"E1頌":1,"論記":2,"E2長行":1,"D5結":1,"C2隨別解釋":1,"D1約自性等五義，分別五識":1,"E1舉五義以為章門":1,"E2牒五識一一分別":1,"F1總說":1,"F2別釋":1,"G1眼識之五相":1,"H1自性":1,"H2所依":4,"J1俱有依":4,"J2等無間依":4,"I1舉依":3,"J3種子依":1,"I2攝之為二":1}
+   clicked data-node=T1829-1#kpD05-005
+  點前： {"行":"","捲":0,"書籤":0} 
+  點後： {"行":"","捲":0,"分頁":24}
+  ⇒ 有無反應： 有變化（跳動了）
+
+【場景 B：融合塊內部的節聯（法師貼的是 <融>）】
+129 |   async eval<T>(expression: string): Promise<T> {
+130 |     const r = await this.send('Runtime.evaluate', {
+131 |       expression, awaitPromise: true, returnByValue: true,
+132 |     });
+133 |     if (r.exceptionDetails) {
+134 |       throw new Error(r.exceptionDetails.exception?.description ?? 'eval failed');
+                      ^
+error: ReferenceError: done is not defined
+    at <anonymous>:2:44
+    at <anonymous>:3:148
+      at eval (D:\2026\adb-converter\ts\tools\_cdp.ts:134:17)
+
+Bun v1.3.11 (Windows x64)
