@@ -33,15 +33,31 @@ const api = async (path: string, method = 'GET', body?: unknown) => {
   return j as any;
 };
 
-const base = gitStr('rev-parse', `remotes/fork/${BRANCH}`).trim();
+/**
+ * 遠端真 tip 與本地追蹤參照常常不一致：本工具自己用 API 重建過的 commit，
+ * SHA 與本地不同，而 `git fetch`（走 github.com）在本機經常被 SNI 斷掉 →
+ * `remotes/fork/<branch>` 會**落後**。若照落後的本地 ref 去重放，已上架的那筆會被
+ * **再推一遍**（內容重複的 commit）。故這裡先查遠端真實 tip，再按**標題去重**。
+ */
+const localBase = gitStr('rev-parse', `remotes/fork/${BRANCH}`).trim();
 const head = gitStr('rev-parse', BRANCH).trim();
-if (base === head) { console.log('fork 已是最新，不必推'); process.exit(0); }
-const commits = (() => { try { return gitStr('log', '--format=%H', '--reverse', `${base}..${head}`).trim().split(/\s+/).filter(Boolean); } catch { return []; } })();
-console.log(`base=${base} head=${head} 本地 fork/main 追蹤=${(() => { try { return gitStr('rev-parse', 'remotes/fork/main').trim(); } catch { return '(無)'; } })()} 物件存在=${(() => { try { gitStr('cat-file', '-t', base); return '是'; } catch { return '否'; } })()}`);
-if (process.argv.includes('--dry')) { console.log(`待重放 ${commits.length} 筆：${commits.map((c) => c.slice(0, 7)).join(' ')}`); process.exit(0); }
-console.log(`待重放 ${commits.length} 筆：${commits.map((c) => c.slice(0, 7)).join(' ')}`);
+const remoteTip = (await api(`/repos/${REPO}/git/refs/heads/${BRANCH}`)).object.sha as string;
+// 遠端近期 commit 的標題集合（用來剔掉「已經上過」的——SHA 不同但標題相同）
+const remoteHist = await api(`/repos/${REPO}/commits?sha=${BRANCH}&per_page=50`) as { commit?: { message?: string } }[];
+const remoteSubjects = new Set((Array.isArray(remoteHist) ? remoteHist : []).map((c) => (c.commit?.message ?? '').split('\n')[0].trim()));
+const base = remoteTip;                                       // 新 commit 要接在**遠端**鏈尾
+const headSubject = gitStr('show', '-s', '--format=%s', head).trim();
+const candidates = (() => { try { return gitStr('log', '--format=%H', '--reverse', `${localBase}..${head}`).trim().split(/\s+/).filter(Boolean); } catch { return []; } })();
+// 本地 SHA 不在遠端（遠端是重建的），所以只能靠「標題是否已在遠端出現」來判定要不要推
+const commits = candidates.filter((c) => !remoteSubjects.has(gitStr('show', '-s', '--format=%s', c).trim()));
+console.log(`遠端真 tip=${remoteTip.slice(0, 12)} 本地 fork/${BRANCH} 追蹤=${localBase.slice(0, 12)}${localBase === remoteTip ? '（一致）' : '（**落後**，已改用遠端 tip 為 base）'}`);
+console.log(`候選 ${candidates.length} 筆，剔除已在遠端的 ${candidates.length - commits.length} 筆 → 待重放 ${commits.length} 筆：${commits.map((c) => c.slice(0, 7)).join(' ') || '（無）'}`);
+if (!commits.length) { console.log('遠端已包含本區全部提交（按標題比對），不必再推。'); process.exit(0); }
+if (process.argv.includes('--dry')) process.exit(0);
 
-let parent = base, localPrev = base, nBlobs = 0, nBytes = 0, cur = '';
+// `parent` 是**遠端**鏈上的 SHA（本地沒這物件，只能送給 API）；`localPrev` 必須是**本地**可比對的 SHA，
+// 取「待重放第一筆的本地父」——base 已改成遠端 tip，直接拿它當 localPrev 會讓 git diff 找不到物件。
+let parent = base, localPrev = gitStr('rev-parse', `${commits[0]}^`).trim(), nBlobs = 0, nBytes = 0, cur = '';
 const t0 = Date.now();
 for (const sha of commits) {
   // 注意：`parent` 是**遠端**鏈上的 SHA（API 重建後與本地不同），`localPrev` 才是本地可比對的上一筆
