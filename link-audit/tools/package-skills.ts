@@ -7,7 +7,7 @@
  * 否則清單上的雜湊每次都在變，維護者無從判斷「到底改沒改」，官網分享也就失去意義。
  * 做法：條目按路徑排序、固定 DOS 時間戳（取自 參數或 1980-01-01，不用 now）、不含多餘欄位。
  *
- * 交付前的四道檢查（跑不過就不准發布）：
+ * 交付前的四道檢查（跑不過即不得發布）：
  *   ① 解壓後 `<name>/SKILL.md` 存在、frontmatter 可解析、`name` 與目錄名一致
  *   ② `description` 非空（它是被找到與被選中的唯一依據）
  *   ③ 掃描無憑證與個資樣式（email、IP、password/token、客戶名稱＋信箱同現）
@@ -20,6 +20,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import { P } from './paths.ts';
 
 const SKILLS = path.join(P.home, 'link-audit', 'skills');
@@ -33,7 +34,7 @@ const zipTime = (iso: string) => {
         dosDate: ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate() };
 };
 
-/* 极简 store-method ZIP（不壓縮：SKILL.md 是小文字檔，用 store 換可重現性與可檢查性） */
+/* 極簡 store-method ZIP（不壓縮：SKILL.md 是小文字檔，用 store 換可重現性與可檢查性） */
 function buildZip(entries: { name: string; data: Buffer }[], stampIso: string): Buffer {
     const { dosTime, dosDate } = zipTime(stampIso);
     const chunks: Buffer[] = [];
@@ -89,7 +90,7 @@ function frontmatter(t: string): Record<string, string> | null {
 }
 
 const SECRET = [
-    { re: /[\w.+-]+@[\w-]+\.[a-z]{2,}/i, why: '電子郵件地址（可能属客戶個資；官網分享＝公開出版）' },
+    { re: /[\w.+-]+@[\w-]+\.[a-z]{2,}/i, why: '電子郵件地址（可能屬客戶個資；官網分享＝公開出版）' },
     { re: /\b\d{1,3}(\.\d{1,3}){3}\b/, why: 'IP 位址' },
     { re: /password|passwd|授權碼|token|secret/i, why: '疑似憑證字樣' },
     { re: /[A-Za-z]:[\\\/]{1,2}(Users|home)[\\\/]/i, why: '個人家目錄絕對路徑' },
@@ -98,6 +99,7 @@ const SECRET = [
 fs.mkdirSync(OUT, { recursive: true });
 const dirs = fs.readdirSync(SKILLS, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
 const manifest: any[] = [];
+const pending: { file: string; zip: Buffer; sha: string }[] = [];   // 全綠才落盤（見下）
 let fail = 0;
 for (const name of dirs) {
     const src = path.join(SKILLS, name, 'SKILL.md');
@@ -117,9 +119,6 @@ for (const name of dirs) {
     for (const e of entries) if (e.name.startsWith('/') || e.name.includes('..')) errs.push(`條目路徑不安全：${e.name}`);
     const zip = buildZip(entries, STAMP);
     const sha = crypto.createHash('sha256').update(zip).digest('hex');
-    const file = path.join(OUT, `${name}.skill`);
-    fs.writeFileSync(file, zip);
-    fs.writeFileSync(file + '.sha256', sha + '  ' + `${name}.skill` + '\n', 'utf8');
 
     // 檢查④：自己解開回來比對（只信「寫進去」不與「讀得出來」）
     const back = readZipEntry(zip, `${name}/SKILL.md`);
@@ -128,21 +127,60 @@ for (const name of dirs) {
     if (errs.length) { fail++; console.log(`✗ ${name}`); for (const e of errs) console.log('   -', e); }
     else console.log(`✓ ${name}  ${(zip.length / 1024).toFixed(1)} KB  sha ${sha.slice(0, 12)}…`);
 
+    // 先留在記憶體：任何一道（含⑤）沒過，就不該讓成品落盤——
+    // 否則目錄裡會躺著一顆「有問題的 .skill」，下一個拿它的人分不清那是不是通過的那版。
+    pending.push({ file: path.join(OUT, `${name}.skill`), zip, sha });
     manifest.push({
         name, version: fm?.version ?? '', description: fm?.description ?? '',
         file: `${name}.skill`, sha256: sha, size: zip.length, buildTime: STAMP,
         requires: name === 'ybh-adb-package' ? ['adb-author'] : [],
         notes: name === 'adb-author' ? ['通用流程：建立、驗收與交付紀律'] :
                name === 'adb-inspect' ? ['查證方法：走 MCP API，禁位元組 grep 與抽全文'] :
-               ['《瑜伽師地論》專案覆盖，只列差異與路徑'],
+               ['《瑜伽師地論》專案覆蓋，只列差異與路徑'],
         errors: errs,
     });
 }
 const mf = { _comment: '官網要分享的 skill 清單。欄位沿用 www/adb/manifest.json 的形狀；sha256 可用旁檔 .sha256 核對。buildTime 固定→同來源重複打包 sha 不變（確定性）。', generatedFrom: 'link-audit/skills', stamp: STAMP, skills: manifest };
-fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(mf, null, 1) + '\n', 'utf8');
+const mfText = JSON.stringify(mf, null, 1) + '\n';
+
+/* 檢查⑤：字形（README §五.1「我方敘述一律繁體」）
+ * 為什麼要接進打包而不是留在 README：會依賴記憶的規則一定被破；而清單上的 notes／description
+ * 是**我們自己寫的字串**，也可能夾簡體，所以連「還沒落盤的清單內容」一起掃（走 stdin，
+ * 掃的即要交的，不是另一份檔案）。
+ * 紀律：偵測器跑不起來＝「未跑」，不能當成「通過」（樣本數為零即失敗的同一條）。*/
+const GLYPH = path.join(P.home, 'link-audit', 'tools', 'check-glyphs.py');
+let glyph: { code: number; body: string } | null = null;
+if (fs.existsSync(GLYPH)) {
+    try {
+        const r = spawnSync('python', ['-X', 'utf8', GLYPH, SKILLS, '-'],
+            { encoding: 'utf8', timeout: 120_000, input: mfText });
+        glyph = { code: r.status ?? -1, body: (r.stdout || '') + (r.stderr || '') };
+    } catch { glyph = null; }
+}
+if (!glyph) {
+    fail++;
+    console.log('✗ ⑤ 字形檢查**沒跑成**（找不到 python 或 ' + GLYPH + '）——這不等於通過。');
+} else if (glyph.code !== 0) {
+    fail++;
+    console.log('✗ ⑤ 字形檢查有 FAIL：');
+    for (const l of glyph.body.trim().split('\n')) if (l.startsWith('FAIL') || l.startsWith('——')) console.log('   ', l);
+} else {
+    const tail = glyph.body.trim().split('\n').filter((l) => l.startsWith('——'))[0] || '';
+    console.log(`✓ ⑤ 字形檢查：${tail.replace(/^—— /, '')}（INFO 為繁簡同形字，已人工判）`);
+}
+
+if (fail) {
+    console.log(`\n⇒ ${fail} 項問題：**未寫入任何成品**（${OUT} 維持上一次全綠的版本）。見上方清單。`);
+    process.exit(1);
+}
+for (const p of pending) {
+    fs.writeFileSync(p.file, p.zip);
+    fs.writeFileSync(p.file + '.sha256', p.sha + '  ' + path.basename(p.file) + '\n', 'utf8');
+}
+fs.writeFileSync(path.join(OUT, 'manifest.json'), mfText, 'utf8');
 console.log(`\n打包 ${manifest.length} 只 → ${OUT}｜清單 manifest.json`);
-console.log(fail ? `⇒ ${fail} 只有問題，不准發布（見上方錯誤清單）` : '⇒ 全部通過四道檢查');
-process.exit(fail ? 1 : 0);
+console.log('⇒ 全部通過五道檢查（①～④ 逐檔、⑤ 全樹＋清單）。另有一道人工檢查：照 skill 從頭跑一次，見 skills/README.md §四');
+process.exit(0);
 
 function readZipEntry(zip: Buffer, name: string): Buffer | null {
     // 由 central directory 定位（比掃 local headers 穩：條目順序固定）
