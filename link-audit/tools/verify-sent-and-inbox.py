@@ -4,6 +4,11 @@
   ① 已寄件匣裡那封 `<br>` 請益信是否真的在伺服器上、附件多大
   ② 收件匣是否有法師的新回信（避免重複發問，也避免漏看他回的東西）
 用法：python link-audit/tools/verify-sent-and-inbox.py
+
+注意（勘誤 #32→#36 的更正）：QQ 的 Sent 資料夾是**延遲同步**——剛寄完立刻查常看不到，
+實測約 1–2 分鐘內才出現；2026-11-16 曾把這現象誤判成「QQ 不會同步 SMTP 提交」。
+所以「寄出了沒」以 `send_message` 回傳 `refused == []` 為準（即時、協議層），
+本腳本的 Sent 檢查只當延遲旁證；剛寄完查不到，等一下再查或直接信賴 refused 訊號。
 """
 import importlib.util
 import imaplib
